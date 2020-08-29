@@ -17,8 +17,8 @@ class FeatureContext implements Context
 {
 
     protected $response;
-    private $client;
-    private $uri;
+    //private $client;
+    //private $uri;
     /**
      * Initializes context.
      *
@@ -29,7 +29,7 @@ class FeatureContext implements Context
     public function __construct()
     {
         //$this->client = $client;
-        $this->uri = 'http://localhost:8000';
+        //$this->uri = 'http://localhost:8000';
     }
 
     /**
@@ -38,9 +38,9 @@ class FeatureContext implements Context
      */
     public function iAmAnUnauthenticatedUser()
     {
-        $client = new GuzzleHttp\Client();
+        $client = new \GuzzleHttp\Client();
 
-        $response = $client->request("GET", $this->uri);
+        $response = $client->request('GET', 'http://localhost:8000/');
 
         $resCod = $response->getStatusCode();
 
@@ -55,12 +55,13 @@ class FeatureContext implements Context
 
     /**
      * @When I request a list of announcements from :arg1
+     * @throws GuzzleException
      */
     public function iRequestAListOfAnnouncementsFrom($arg1)
     {
         $client = new GuzzleHttp\Client(['base_uri'=>$arg1]);
 
-        $this->response = $client->get('/announcements');
+        $this->response = $client->request('GET', '/announcements');
 
         $responseCode = $this->response->getStatusCode();
 
