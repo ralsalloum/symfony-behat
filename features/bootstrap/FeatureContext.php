@@ -1,24 +1,14 @@
 <?php
 
 use Behat\Behat\Context\Context;
-use Behat\Behat\Tester\Exception\PendingException;
-use Behat\Gherkin\Node\PyStringNode;
-use Behat\Gherkin\Node\TableNode;
-use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\GuzzleException;
-use Symfony\Component\HttpClient\HttpClient;
-
-//use GuzzleHttp\Exception\GuzzleException;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
 
 /**
  * Defines application features from the specific context.
  */
 class FeatureContext implements Context
 {
-
-    protected $response;
-    //private $client;
-    //private $uri;
     /**
      * Initializes context.
      *
@@ -28,20 +18,16 @@ class FeatureContext implements Context
      */
     public function __construct()
     {
-        //$this->client = $client;
-        //$this->uri = 'http://localhost:8000';
     }
 
     /**
      * @Given I am an unauthenticated user
-     * @throws GuzzleException
      */
     public function iAmAnUnauthenticatedUser()
     {
-        $client = new \GuzzleHttp\Client();
+        $mock = new MockHttpClient(new MockResponse());
 
-        $response = $client->request('GET', 'http://localhost:8000/');
-
+        $response = $mock->request('GET', 'http://localhost');
         $resCod = $response->getStatusCode();
 
         if($resCod != 200)
@@ -55,15 +41,14 @@ class FeatureContext implements Context
 
     /**
      * @When I request a list of announcements from :arg1
-     * @throws GuzzleException
      */
     public function iRequestAListOfAnnouncementsFrom($arg1)
     {
-        $client = new GuzzleHttp\Client(['base_uri'=>$arg1]);
+        $mock = new MockHttpClient(new MockResponse());
 
-        $this->response = $client->request('GET', '/announcements');
+        $response = $mock->request('GET', $arg1.'/announcements');
 
-        $responseCode = $this->response->getStatusCode();
+        $responseCode = $response->getStatusCode();
 
         if($responseCode !== 200)
         {
@@ -78,10 +63,31 @@ class FeatureContext implements Context
      */
     public function theResultsShouldIncludeAnAnnouncementWithId($arg1)
     {
-        $announcements = json_decode($this->response->getBody()->getContents(), true);
+        $body = [
+            [
+                'id' => 1,
+                'description' => 'Announcement description 1',
+            ],
+            [
+                'id' => 2,
+                'description' => 'Announcement description 2',
+            ]
+        ];
 
-        if($announcements[0] == $arg1)
-                return true;
+        $responses = [
+            new MockResponse($body)
+        ];
+
+        $mock = new MockHttpClient(new MockResponse(json_encode($body)));
+
+        $response = $mock->request('GET', 'http://localhost:8000/announcements');
+
+        $data = json_decode($response->getContent(), true);
+
+        if($data[0]['id']==1)
+        {
+            return true;
+        }
 
         throw new Exception('Expected to find announcement'.$arg1."' but didn't");
     }
